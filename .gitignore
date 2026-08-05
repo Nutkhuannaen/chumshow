@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# local dev-only Postgres instance (not part of the repo; see Docker Compose for the real setup)
+/.devdata
+
+# editor/agent tool caches
+/.claude/skills
+/skills-lock.json
+

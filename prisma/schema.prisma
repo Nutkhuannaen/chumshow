@@ -1,0 +1,340 @@
+// ChumShow — โชห่วย POS/ERP demo schema
+// See /Users/nutkhuannaen/.claude/plans/pos-dapper-harbor.md for design rationale.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// Shop / Auth
+// ─────────────────────────────────────────────
+
+enum PromptPayIdType {
+  PHONE
+  NATIONAL_ID
+}
+
+model Shop {
+  id            String           @id @default(cuid())
+  name          String
+  promptPayId   String?
+  promptPayType PromptPayIdType?
+  address       String?
+  logoUrl       String?
+  currency      String           @default("THB")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+enum Role {
+  OWNER
+  STAFF
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  username     String   @unique
+  passwordHash String?
+  pinHash      String?
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  salesAsCashier   Sale[]            @relation("CashierSales")
+  shiftsOpened     CashShift[]       @relation("ShiftOpenedBy")
+  shiftsClosed     CashShift[]       @relation("ShiftClosedBy")
+  expenses         Expense[]
+  ownerDraws       OwnerDraw[]
+  stockIns         StockIn[]
+  stockAdjustments StockAdjustment[]
+  capexItems       CapexItem[]
+}
+
+// ─────────────────────────────────────────────
+// Catalog / Stock
+// ─────────────────────────────────────────────
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id           String    @id @default(cuid())
+  sku          String?   @unique
+  barcode      String?   @unique
+  name         String
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
+  unit         String    @default("ชิ้น")
+  costPrice    Decimal   @default(0) @db.Decimal(12, 4)
+  sellPrice    Decimal   @db.Decimal(12, 2)
+  currentStock Decimal   @default(0) @db.Decimal(12, 3)
+  reorderPoint Decimal   @default(0) @db.Decimal(12, 3)
+  imageUrl     String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  saleItems            SaleItem[]
+  stockMovements       StockMovement[]
+  stockInItems         StockInItem[]
+  stockAdjustmentItems StockAdjustmentItem[]
+
+  @@index([categoryId])
+}
+
+enum StockMovementType {
+  PURCHASE_IN
+  SALE_OUT
+  ADJUST_IN
+  ADJUST_OUT
+  VOID_RESTOCK_IN
+}
+
+enum StockSourceType {
+  STOCK_IN
+  SALE
+  ADJUSTMENT
+  VOID
+}
+
+// Immutable audit ledger — every stock movement, ever.
+model StockMovement {
+  id                  String            @id @default(cuid())
+  productId           String
+  product             Product           @relation(fields: [productId], references: [id])
+  type                StockMovementType
+  quantity            Decimal           @db.Decimal(12, 3)
+  unitCost            Decimal           @db.Decimal(12, 4)
+  qtyBalanceAfter     Decimal           @db.Decimal(12, 3)
+  avgCostBalanceAfter Decimal           @db.Decimal(12, 4)
+  sourceType          StockSourceType
+  sourceId            String
+  note                String?
+  createdAt           DateTime          @default(now())
+
+  @@index([productId, createdAt])
+  @@index([sourceType, sourceId])
+}
+
+model StockIn {
+  id           String        @id @default(cuid())
+  supplierName String?
+  note         String?
+  totalCost    Decimal       @db.Decimal(12, 2)
+  createdById  String
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  createdAt    DateTime      @default(now())
+  items        StockInItem[]
+}
+
+model StockInItem {
+  id        String  @id @default(cuid())
+  stockInId String
+  stockIn   StockIn @relation(fields: [stockInId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Decimal @db.Decimal(12, 3)
+  unitCost  Decimal @db.Decimal(12, 4)
+  subtotal  Decimal @db.Decimal(12, 2)
+}
+
+enum AdjustmentReason {
+  DAMAGE
+  THEFT
+  EXPIRED
+  COUNT_CORRECTION
+  OTHER
+}
+
+model StockAdjustment {
+  id          String                @id @default(cuid())
+  reason      AdjustmentReason
+  note        String?
+  createdById String
+  createdBy   User                  @relation(fields: [createdById], references: [id])
+  createdAt   DateTime              @default(now())
+  items       StockAdjustmentItem[]
+}
+
+model StockAdjustmentItem {
+  id                String          @id @default(cuid())
+  stockAdjustmentId String
+  stockAdjustment   StockAdjustment @relation(fields: [stockAdjustmentId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product         @relation(fields: [productId], references: [id])
+  quantityDelta     Decimal         @db.Decimal(12, 3) // negative = shrinkage/write-off, positive = count-up
+  unitCostSnapshot  Decimal         @db.Decimal(12, 4)
+}
+
+// ─────────────────────────────────────────────
+// Sales / POS
+// ─────────────────────────────────────────────
+
+enum PaymentMethod {
+  CASH
+  PROMPTPAY
+}
+
+enum SaleStatus {
+  PENDING_PAYMENT
+  COMPLETED
+  VOIDED
+}
+
+model Sale {
+  id                   String        @id @default(cuid())
+  saleNumber           String        @unique
+  cashierId            String
+  cashier              User          @relation("CashierSales", fields: [cashierId], references: [id])
+  shiftId              String?
+  shift                CashShift?    @relation(fields: [shiftId], references: [id])
+  paymentMethod        PaymentMethod
+  status               SaleStatus    @default(COMPLETED)
+  subtotal             Decimal       @db.Decimal(12, 2)
+  discount             Decimal       @default(0) @db.Decimal(12, 2)
+  total                Decimal       @db.Decimal(12, 2)
+  cashReceived         Decimal?      @db.Decimal(12, 2)
+  changeGiven          Decimal?      @db.Decimal(12, 2)
+  promptPayConfirmedAt DateTime?
+  voidedAt             DateTime?
+  voidReason           String?
+  createdAt            DateTime      @default(now())
+
+  items SaleItem[]
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model SaleItem {
+  id                  String  @id @default(cuid())
+  saleId              String
+  sale                Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId           String
+  product              Product @relation(fields: [productId], references: [id])
+  productNameSnapshot String
+  quantity            Decimal @db.Decimal(12, 3)
+  unitPriceSnapshot   Decimal @db.Decimal(12, 2)
+  unitCostSnapshot    Decimal @db.Decimal(12, 4)
+  lineDiscount        Decimal @default(0) @db.Decimal(12, 2)
+  lineTotal           Decimal @db.Decimal(12, 2)
+  lineCogs            Decimal @db.Decimal(12, 2)
+}
+
+// ─────────────────────────────────────────────
+// Cash Shift (เปิดกะ / ปิดกะ)
+// ─────────────────────────────────────────────
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+model CashShift {
+  id           String      @id @default(cuid())
+  openedById   String
+  openedBy     User        @relation("ShiftOpenedBy", fields: [openedById], references: [id])
+  closedById   String?
+  closedBy     User?       @relation("ShiftClosedBy", fields: [closedById], references: [id])
+  openingCash  Decimal     @db.Decimal(12, 2)
+  expectedCash Decimal?    @db.Decimal(12, 2)
+  countedCash  Decimal?    @db.Decimal(12, 2)
+  variance     Decimal?    @db.Decimal(12, 2)
+  status       ShiftStatus @default(OPEN)
+  note         String?
+  openedAt     DateTime    @default(now())
+  closedAt     DateTime?
+
+  sales      Sale[]
+  expenses   Expense[]
+  ownerDraws OwnerDraw[]
+
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Expenses (ค่าใช้จ่ายร้าน) — SHOP money only
+// ─────────────────────────────────────────────
+
+model ExpenseCategory {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  expenses Expense[]
+}
+
+enum ExpensePaymentMethod {
+  CASH
+  TRANSFER
+}
+
+model Expense {
+  id              String               @id @default(cuid())
+  categoryId      String
+  category        ExpenseCategory      @relation(fields: [categoryId], references: [id])
+  amount          Decimal              @db.Decimal(12, 2)
+  description     String?
+  paymentMethod   ExpensePaymentMethod
+  shiftId         String?
+  shift           CashShift?           @relation(fields: [shiftId], references: [id])
+  incurredAt      DateTime             @default(now())
+  receiptImageUrl String?
+  createdById     String
+  createdBy       User                 @relation(fields: [createdById], references: [id])
+  createdAt       DateTime             @default(now())
+
+  @@index([incurredAt])
+}
+
+// ─────────────────────────────────────────────
+// Owner Draw (เบิกเงินส่วนตัว) — deliberately NOT an Expense
+// ─────────────────────────────────────────────
+
+enum DrawMethod {
+  CASH
+  TRANSFER
+}
+
+model OwnerDraw {
+  id        String     @id @default(cuid())
+  amount    Decimal    @db.Decimal(12, 2)
+  method    DrawMethod
+  reason    String?
+  shiftId   String?
+  shift     CashShift? @relation(fields: [shiftId], references: [id])
+  takenById String
+  takenBy   User       @relation(fields: [takenById], references: [id])
+  takenAt   DateTime   @default(now())
+  note      String?
+  createdAt DateTime   @default(now())
+
+  @@index([takenAt])
+}
+
+// ─────────────────────────────────────────────
+// CAPEX (การลงทุน/อุปกรณ์เริ่มต้น)
+// ─────────────────────────────────────────────
+
+model CapexItem {
+  id               String   @id @default(cuid())
+  name             String
+  categoryLabel    String?
+  amount           Decimal  @db.Decimal(12, 2)
+  purchaseDate     DateTime
+  usefulLifeMonths Int?
+  note             String?
+  createdById      String
+  createdBy        User     @relation(fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+
+  @@index([purchaseDate])
+}
