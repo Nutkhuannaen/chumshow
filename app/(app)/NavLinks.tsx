@@ -32,6 +32,7 @@ export function NavLinks({ role }: { role: "OWNER" | "STAFF" }) {
           <Link
             key={item.href}
             href={item.href}
+            prefetch={false}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
               active ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-200"
             }`}

@@ -49,7 +49,7 @@ export default async function OwnerDrawsPage() {
                     <td className="px-4 py-2 text-stone-500">{d.reason ?? "—"}</td>
                     <td className="px-4 py-2 text-right text-stone-800">฿{d.amount.toFixed(2)}</td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/finance/owner-draws/${d.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                      <Link href={`/finance/owner-draws/${d.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
                         แก้ไข
                       </Link>
                     </td>

@@ -56,7 +56,7 @@ export default async function CapexPage() {
                         : "ยังไม่ได้ระบุอายุการใช้งาน"}
                     </td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/finance/capex/${item.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                      <Link href={`/finance/capex/${item.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
                         แก้ไข
                       </Link>
                     </td>

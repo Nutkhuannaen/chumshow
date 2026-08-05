@@ -63,7 +63,7 @@ export default async function ExpensesPage() {
                     </td>
                     <td className="px-4 py-2 text-right text-stone-800">฿{e.amount.toFixed(2)}</td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/finance/expenses/${e.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                      <Link href={`/finance/expenses/${e.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
                         แก้ไข
                       </Link>
                     </td>

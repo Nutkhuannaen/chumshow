@@ -64,7 +64,11 @@ export default async function StockPage() {
                 return (
                   <tr key={p.id} className={!p.isActive ? "opacity-40" : undefined}>
                     <td className="px-4 py-2">
-                      <Link href={`/stock/products/${p.id}/edit`} className="font-medium text-stone-800 hover:underline">
+                      <Link
+                        href={`/stock/products/${p.id}/edit`}
+                        prefetch={false}
+                        className="font-medium text-stone-800 hover:underline"
+                      >
                         {p.name}
                       </Link>
                       {p.sku && <div className="text-xs text-stone-400">SKU: {p.sku}</div>}
@@ -81,7 +85,11 @@ export default async function StockPage() {
                     <td className="px-4 py-2 text-right text-stone-600">฿{p.costPrice.toFixed(2)}</td>
                     <td className="px-4 py-2 text-right text-stone-800">฿{p.sellPrice.toFixed(2)}</td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/stock/products/${p.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                      <Link
+                        href={`/stock/products/${p.id}/edit`}
+                        prefetch={false}
+                        className="text-xs text-stone-500 hover:underline"
+                      >
                         แก้ไข
                       </Link>
                     </td>

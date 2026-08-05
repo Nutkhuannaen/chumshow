@@ -57,7 +57,7 @@ export default async function ShiftHistoryPage() {
                       {variance === 0 ? "ยอดตรง" : `${variance > 0 ? "+" : ""}฿${variance.toFixed(2)}`}
                     </td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/shift/history/${s.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                      <Link href={`/shift/history/${s.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
                         แก้ไข
                       </Link>
                     </td>
