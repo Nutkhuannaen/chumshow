@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { checkout, checkoutPromptPay, type ActionState } from "./actions";
+import { BarcodeScannerButton } from "./BarcodeScannerButton";
 
 type Product = {
   id: string;
@@ -74,31 +75,50 @@ export function POSTerminal({ products }: { products: Product[] }) {
     );
   }
 
-  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
-    const q = search.trim().toLowerCase();
-    if (!q) return;
+  function tryAddByCode(code: string) {
+    const q = code.trim().toLowerCase();
+    if (!q) return false;
     const exact = products.find((p) => p.barcode?.toLowerCase() === q);
     if (exact) {
       addToCart(exact);
       setSearch("");
-    } else if (filtered.length === 1) {
+      return true;
+    }
+    if (filtered.length === 1) {
       addToCart(filtered[0]);
       setSearch("");
+      return true;
+    }
+    return false;
+  }
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    tryAddByCode(search);
+  }
+
+  function handleScan(code: string) {
+    if (!tryAddByCode(code)) {
+      // No exact/unique match — drop the scanned code into the search box so the
+      // cashier can see what was read and pick from the (possibly multiple) matches.
+      setSearch(code);
     }
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
       <div>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder="ค้นหาสินค้า หรือสแกนบาร์โค้ด..."
-          autoFocus
-          className="mb-4 w-full rounded-xl border border-stone-300 px-4 py-3 text-base focus:border-stone-500 focus:outline-none"
-        />
+        <div className="mb-4 flex gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="ค้นหาสินค้า หรือสแกนบาร์โค้ด..."
+            autoFocus
+            className="w-full rounded-xl border border-stone-300 px-4 py-3 text-base focus:border-stone-500 focus:outline-none"
+          />
+          <BarcodeScannerButton onScan={handleScan} />
+        </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {filtered.map((p) => {
             const outOfStock = p.currentStock <= 0;
