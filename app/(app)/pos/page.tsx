@@ -1,13 +1,25 @@
-import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { POSTerminal } from "./POSTerminal";
 
 export default async function PosPage() {
-  const session = await auth();
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    include: { category: true },
+  });
 
   return (
-    <div className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
-      <p className="text-sm text-stone-500">
-        สวัสดีคุณ {session?.user.name} — หน้าขายสินค้ากำลังจะมาเร็วๆ นี้
-      </p>
-    </div>
+    <POSTerminal
+      products={products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        unit: p.unit,
+        sellPrice: p.sellPrice.toNumber(),
+        currentStock: p.currentStock.toNumber(),
+        barcode: p.barcode,
+        sku: p.sku,
+        categoryName: p.category?.name ?? null,
+      }))}
+    />
   );
 }
