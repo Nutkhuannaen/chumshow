@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { generatePromptPayQrDataUrl } from "@/lib/promptpay";
+import { PromptPayPanel } from "./PromptPayPanel";
 
 export default async function ReceiptPage({ params }: { params: Promise<{ saleId: string }> }) {
   const { saleId } = await params;
@@ -10,6 +12,15 @@ export default async function ReceiptPage({ params }: { params: Promise<{ saleId
   });
 
   if (!sale) notFound();
+
+  const isPendingPromptPay = sale.paymentMethod === "PROMPTPAY" && sale.status === "PENDING_PAYMENT";
+  let qrDataUrl: string | null = null;
+  if (isPendingPromptPay) {
+    const shop = await prisma.shop.findFirst();
+    if (shop?.promptPayId) {
+      qrDataUrl = await generatePromptPayQrDataUrl(shop.promptPayId, sale.total.toNumber());
+    }
+  }
 
   return (
     <div className="mx-auto max-w-sm space-y-4">
@@ -21,6 +32,21 @@ export default async function ReceiptPage({ params }: { params: Promise<{ saleId
             {sale.createdAt.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
           </p>
           <p className="text-xs text-stone-400">แคชเชียร์: {sale.cashier.name}</p>
+          {sale.status === "VOIDED" && (
+            <p className="mt-2 inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+              ยกเลิกแล้ว
+            </p>
+          )}
+          {isPendingPromptPay && (
+            <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+              รอชำระเงิน
+            </p>
+          )}
+          {sale.status === "COMPLETED" && sale.paymentMethod === "PROMPTPAY" && (
+            <p className="mt-2 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+              ชำระผ่านพร้อมเพย์แล้ว
+            </p>
+          )}
         </div>
 
         <div className="space-y-1 border-t border-dashed border-stone-300 py-3 text-sm">
@@ -52,6 +78,15 @@ export default async function ReceiptPage({ params }: { params: Promise<{ saleId
             </>
           )}
         </div>
+
+        {isPendingPromptPay &&
+          (qrDataUrl ? (
+            <PromptPayPanel saleId={sale.id} qrDataUrl={qrDataUrl} />
+          ) : (
+            <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+              ร้านยังไม่ได้ตั้งค่าพร้อมเพย์ — ไปที่หน้าตั้งค่าเพื่อเพิ่มหมายเลขพร้อมเพย์
+            </p>
+          ))}
       </div>
 
       <div className="flex gap-2">

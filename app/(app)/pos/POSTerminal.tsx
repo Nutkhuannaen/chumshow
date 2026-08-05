@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { checkout, type ActionState } from "./actions";
+import { checkout, checkoutPromptPay, type ActionState } from "./actions";
 
 type Product = {
   id: string;
@@ -22,8 +22,13 @@ export function POSTerminal({ products }: { products: Product[] }) {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [step, setStep] = useState<"cart" | "payment">("cart");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "PROMPTPAY">("CASH");
   const [cashReceived, setCashReceived] = useState("");
   const [state, formAction, pending] = useActionState<ActionState, FormData>(checkout, undefined);
+  const [ppState, ppFormAction, ppPending] = useActionState<ActionState, FormData>(
+    checkoutPromptPay,
+    undefined,
+  );
 
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -174,14 +179,7 @@ export function POSTerminal({ products }: { products: Product[] }) {
             </button>
           </>
         ) : (
-          <form action={formAction}>
-            {cartWithDetails.map((l) => (
-              <div key={l.productId}>
-                <input type="hidden" name="productId" value={l.productId} />
-                <input type="hidden" name="quantity" value={l.qty} />
-              </div>
-            ))}
-
+          <div>
             <button
               type="button"
               onClick={() => setStep("cart")}
@@ -195,54 +193,109 @@ export function POSTerminal({ products }: { products: Product[] }) {
               <span className="text-xl font-bold text-stone-900">฿{total.toFixed(2)}</span>
             </div>
 
-            <label className="mb-1 block text-sm font-medium text-stone-700">รับเงินสด (บาท)</label>
-            <input
-              name="cashReceived"
-              type="number"
-              step="1"
-              min="0"
-              required
-              value={cashReceived}
-              onChange={(e) => setCashReceived(e.target.value)}
-              className="mb-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-base focus:border-stone-500 focus:outline-none"
-            />
-            <div className="mb-3 flex flex-wrap gap-2">
-              {QUICK_CASH.map((amt) => (
-                <button
-                  key={amt}
-                  type="button"
-                  onClick={() => setCashReceived(String(amt))}
-                  className="rounded-lg bg-stone-100 px-3 py-1 text-xs text-stone-600"
-                >
-                  ฿{amt}
-                </button>
-              ))}
+            <div className="mb-4 grid grid-cols-2 rounded-xl bg-stone-100 p-1">
               <button
                 type="button"
-                onClick={() => setCashReceived(total.toFixed(0))}
-                className="rounded-lg bg-stone-100 px-3 py-1 text-xs text-stone-600"
+                onClick={() => setPaymentMethod("CASH")}
+                className={`rounded-lg py-2 text-sm font-medium transition ${
+                  paymentMethod === "CASH" ? "bg-white text-stone-900 shadow" : "text-stone-500"
+                }`}
               >
-                พอดี
+                เงินสด
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("PROMPTPAY")}
+                className={`rounded-lg py-2 text-sm font-medium transition ${
+                  paymentMethod === "PROMPTPAY" ? "bg-white text-stone-900 shadow" : "text-stone-500"
+                }`}
+              >
+                พร้อมเพย์
               </button>
             </div>
 
-            <div className="mb-4 flex items-center justify-between rounded-lg bg-stone-50 px-3 py-2">
-              <span className="text-sm text-stone-500">เงินทอน</span>
-              <span className={`text-base font-semibold ${change < 0 ? "text-red-600" : "text-stone-900"}`}>
-                ฿{change.toFixed(2)}
-              </span>
-            </div>
+            {paymentMethod === "CASH" ? (
+              <form action={formAction}>
+                {cartWithDetails.map((l) => (
+                  <div key={l.productId}>
+                    <input type="hidden" name="productId" value={l.productId} />
+                    <input type="hidden" name="quantity" value={l.qty} />
+                  </div>
+                ))}
 
-            {state?.error && <p className="mb-3 text-sm text-red-600">{state.error}</p>}
+                <label className="mb-1 block text-sm font-medium text-stone-700">รับเงินสด (บาท)</label>
+                <input
+                  name="cashReceived"
+                  type="number"
+                  step="1"
+                  min="0"
+                  required
+                  value={cashReceived}
+                  onChange={(e) => setCashReceived(e.target.value)}
+                  className="mb-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-base focus:border-stone-500 focus:outline-none"
+                />
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {QUICK_CASH.map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setCashReceived(String(amt))}
+                      className="rounded-lg bg-stone-100 px-3 py-1 text-xs text-stone-600"
+                    >
+                      ฿{amt}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setCashReceived(total.toFixed(0))}
+                    className="rounded-lg bg-stone-100 px-3 py-1 text-xs text-stone-600"
+                  >
+                    พอดี
+                  </button>
+                </div>
 
-            <button
-              type="submit"
-              disabled={pending || change < 0}
-              className="w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              {pending ? "กำลังบันทึก..." : "ยืนยันการขาย"}
-            </button>
-          </form>
+                <div className="mb-4 flex items-center justify-between rounded-lg bg-stone-50 px-3 py-2">
+                  <span className="text-sm text-stone-500">เงินทอน</span>
+                  <span className={`text-base font-semibold ${change < 0 ? "text-red-600" : "text-stone-900"}`}>
+                    ฿{change.toFixed(2)}
+                  </span>
+                </div>
+
+                {state?.error && <p className="mb-3 text-sm text-red-600">{state.error}</p>}
+
+                <button
+                  type="submit"
+                  disabled={pending || change < 0}
+                  className="w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {pending ? "กำลังบันทึก..." : "ยืนยันการขาย"}
+                </button>
+              </form>
+            ) : (
+              <form action={ppFormAction}>
+                {cartWithDetails.map((l) => (
+                  <div key={l.productId}>
+                    <input type="hidden" name="productId" value={l.productId} />
+                    <input type="hidden" name="quantity" value={l.qty} />
+                  </div>
+                ))}
+
+                <p className="mb-4 text-sm text-stone-500">
+                  ระบบจะสร้าง QR พร้อมเพย์ยอด ฿{total.toFixed(2)} ให้ลูกค้าสแกน แล้วกดยืนยันเมื่อได้รับเงินแล้ว
+                </p>
+
+                {ppState?.error && <p className="mb-3 text-sm text-red-600">{ppState.error}</p>}
+
+                <button
+                  type="submit"
+                  disabled={ppPending}
+                  className="w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {ppPending ? "กำลังสร้าง QR..." : "สร้าง QR พร้อมเพย์"}
+                </button>
+              </form>
+            )}
+          </div>
         )}
       </div>
     </div>
