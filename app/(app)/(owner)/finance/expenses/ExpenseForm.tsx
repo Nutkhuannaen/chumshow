@@ -5,8 +5,25 @@ import { createExpense, createExpenseCategory, type ActionState } from "./action
 
 type Category = { id: string; name: string };
 
-export function ExpenseForm({ categories }: { categories: Category[] }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(createExpense, undefined);
+type ExpenseFormValues = {
+  categoryId: string;
+  amount: string;
+  description: string;
+  paymentMethod: "CASH" | "TRANSFER";
+};
+
+export function ExpenseForm({
+  categories,
+  action = createExpense,
+  initialValues,
+  submitLabel = "บันทึกค่าใช้จ่าย",
+}: {
+  categories: Category[];
+  action?: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  initialValues?: ExpenseFormValues;
+  submitLabel?: string;
+}) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(action, undefined);
 
   return (
     <form action={formAction} className="space-y-3">
@@ -16,6 +33,7 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
           <select
             name="categoryId"
             required
+            defaultValue={initialValues?.categoryId ?? ""}
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           >
             <option value="">— เลือก —</option>
@@ -34,6 +52,7 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
             step="0.01"
             min="0"
             required
+            defaultValue={initialValues?.amount}
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
@@ -43,6 +62,7 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
         <label className="mb-1 block text-sm font-medium text-stone-700">รายละเอียด (ไม่บังคับ)</label>
         <input
           name="description"
+          defaultValue={initialValues?.description}
           className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
         />
       </div>
@@ -51,10 +71,22 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
         <label className="mb-1 block text-sm font-medium text-stone-700">จ่ายด้วย</label>
         <div className="flex gap-4 text-sm">
           <label className="flex items-center gap-1.5">
-            <input type="radio" name="paymentMethod" value="CASH" defaultChecked /> เงินสดจากลิ้นชัก
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="CASH"
+              defaultChecked={(initialValues?.paymentMethod ?? "CASH") === "CASH"}
+            />{" "}
+            เงินสดจากลิ้นชัก
           </label>
           <label className="flex items-center gap-1.5">
-            <input type="radio" name="paymentMethod" value="TRANSFER" /> โอน/อื่นๆ
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="TRANSFER"
+              defaultChecked={initialValues?.paymentMethod === "TRANSFER"}
+            />{" "}
+            โอน/อื่นๆ
           </label>
         </div>
       </div>
@@ -66,7 +98,7 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
         disabled={pending || categories.length === 0}
         className="rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
       >
-        {pending ? "กำลังบันทึก..." : "บันทึกค่าใช้จ่าย"}
+        {pending ? "กำลังบันทึก..." : submitLabel}
       </button>
       {categories.length === 0 && (
         <p className="text-xs text-amber-600">เพิ่มหมวดหมู่ค่าใช้จ่ายก่อนด้านล่าง</p>

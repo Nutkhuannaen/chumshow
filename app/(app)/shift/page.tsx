@@ -38,9 +38,14 @@ export default async function ShiftPage() {
             {shift.openedAt.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
           </span>
         </div>
-        <div className="mb-3 flex justify-between">
+        <div className="mb-3 flex items-center justify-between">
           <span className="text-stone-500">เงินสดตั้งต้น</span>
-          <span className="text-stone-800">฿{shift.openingCash.toFixed(2)}</span>
+          <span className="flex items-center gap-2">
+            <span className="text-stone-800">฿{shift.openingCash.toFixed(2)}</span>
+            <Link href="/shift/edit" className="text-xs text-stone-400 hover:underline">
+              แก้ไข
+            </Link>
+          </span>
         </div>
         <div className="flex justify-between border-t border-stone-200 pt-3 font-semibold">
           <span className="text-stone-600">เงินสดที่ควรมีตอนนี้</span>

@@ -3,8 +3,25 @@
 import { useActionState } from "react";
 import { createCapexItem, type ActionState } from "./actions";
 
-export function CapexForm() {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(createCapexItem, undefined);
+type CapexFormValues = {
+  name: string;
+  categoryLabel: string;
+  amount: string;
+  purchaseDate: string;
+  usefulLifeMonths: string;
+  note: string;
+};
+
+export function CapexForm({
+  action = createCapexItem,
+  initialValues,
+  submitLabel = "บันทึกรายการลงทุน",
+}: {
+  action?: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  initialValues?: CapexFormValues;
+  submitLabel?: string;
+}) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(action, undefined);
   const today = new Date().toISOString().slice(0, 10);
 
   return (
@@ -16,6 +33,7 @@ export function CapexForm() {
             name="name"
             required
             placeholder="เช่น ตู้แช่เย็น, ชั้นวางสินค้า"
+            defaultValue={initialValues?.name}
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
@@ -24,6 +42,7 @@ export function CapexForm() {
           <input
             name="categoryLabel"
             placeholder="อุปกรณ์ / ตกแต่งร้าน / อื่นๆ"
+            defaultValue={initialValues?.categoryLabel}
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
@@ -37,6 +56,7 @@ export function CapexForm() {
             step="0.01"
             min="0"
             required
+            defaultValue={initialValues?.amount}
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
@@ -46,7 +66,7 @@ export function CapexForm() {
             name="purchaseDate"
             type="date"
             required
-            defaultValue={today}
+            defaultValue={initialValues?.purchaseDate ?? today}
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
@@ -58,6 +78,7 @@ export function CapexForm() {
             step="1"
             min="1"
             placeholder="เช่น 60"
+            defaultValue={initialValues?.usefulLifeMonths}
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
@@ -66,6 +87,7 @@ export function CapexForm() {
         <label className="mb-1 block text-sm font-medium text-stone-700">หมายเหตุ (ไม่บังคับ)</label>
         <input
           name="note"
+          defaultValue={initialValues?.note}
           className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
         />
       </div>
@@ -75,7 +97,7 @@ export function CapexForm() {
         disabled={pending}
         className="rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
       >
-        {pending ? "กำลังบันทึก..." : "บันทึกรายการลงทุน"}
+        {pending ? "กำลังบันทึก..." : submitLabel}
       </button>
     </form>
   );

@@ -40,3 +40,32 @@ export async function createOwnerDraw(_prev: ActionState, formData: FormData): P
 
   revalidatePath("/finance/owner-draws");
 }
+
+export async function updateOwnerDraw(
+  drawId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+
+  const parsed = drawSchema.safeParse({
+    amount: formData.get("amount"),
+    method: formData.get("method"),
+    reason: formData.get("reason") || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const data = parsed.data;
+
+  // shiftId is intentionally left untouched — see updateExpense for why.
+  await prisma.ownerDraw.update({
+    where: { id: drawId },
+    data: {
+      amount: data.amount,
+      method: data.method,
+      reason: data.reason || null,
+    },
+  });
+
+  revalidatePath("/finance/owner-draws");
+}

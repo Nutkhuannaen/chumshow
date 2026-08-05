@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ExpenseForm, CategoryQuickAdd } from "./ExpenseForm";
 
@@ -39,12 +40,13 @@ export default async function ExpensesPage() {
                 <th className="px-4 py-2 font-medium">รายละเอียด</th>
                 <th className="px-4 py-2 font-medium">จ่ายด้วย</th>
                 <th className="px-4 py-2 font-medium text-right">จำนวนเงิน</th>
+                <th className="px-4 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-stone-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
                     ยังไม่มีค่าใช้จ่าย
                   </td>
                 </tr>
@@ -60,6 +62,11 @@ export default async function ExpensesPage() {
                       {e.paymentMethod === "CASH" ? "เงินสด" : "โอน/อื่นๆ"}
                     </td>
                     <td className="px-4 py-2 text-right text-stone-800">฿{e.amount.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-right">
+                      <Link href={`/finance/expenses/${e.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                        แก้ไข
+                      </Link>
+                    </td>
                   </tr>
                 ))
               )}

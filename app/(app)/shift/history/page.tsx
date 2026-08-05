@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
@@ -32,6 +33,7 @@ export default async function ShiftHistoryPage() {
                 <th className="px-4 py-2 font-medium text-right">ควรมี</th>
                 <th className="px-4 py-2 font-medium text-right">นับได้จริง</th>
                 <th className="px-4 py-2 font-medium text-right">ผลต่าง</th>
+                <th className="px-4 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -53,6 +55,11 @@ export default async function ShiftHistoryPage() {
                       }`}
                     >
                       {variance === 0 ? "ยอดตรง" : `${variance > 0 ? "+" : ""}฿${variance.toFixed(2)}`}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <Link href={`/shift/history/${s.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                        แก้ไข
+                      </Link>
                     </td>
                   </tr>
                 );

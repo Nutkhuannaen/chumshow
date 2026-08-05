@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { OwnerDrawForm } from "./OwnerDrawForm";
 
@@ -27,12 +28,13 @@ export default async function OwnerDrawsPage() {
                 <th className="px-4 py-2 font-medium">วิธี</th>
                 <th className="px-4 py-2 font-medium">หมายเหตุ</th>
                 <th className="px-4 py-2 font-medium text-right">จำนวนเงิน</th>
+                <th className="px-4 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {draws.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-stone-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
                     ยังไม่มีรายการเบิกเงิน
                   </td>
                 </tr>
@@ -46,6 +48,11 @@ export default async function OwnerDrawsPage() {
                     <td className="px-4 py-2 text-stone-500">{d.method === "CASH" ? "เงินสด" : "โอน"}</td>
                     <td className="px-4 py-2 text-stone-500">{d.reason ?? "—"}</td>
                     <td className="px-4 py-2 text-right text-stone-800">฿{d.amount.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-right">
+                      <Link href={`/finance/owner-draws/${d.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                        แก้ไข
+                      </Link>
+                    </td>
                   </tr>
                 ))
               )}

@@ -47,3 +47,39 @@ export async function createCapexItem(_prev: ActionState, formData: FormData): P
   revalidatePath("/finance/capex");
   revalidatePath("/dashboard");
 }
+
+export async function updateCapexItem(
+  capexId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+
+  const usefulLifeRaw = formData.get("usefulLifeMonths");
+  const parsed = capexSchema.safeParse({
+    name: formData.get("name"),
+    categoryLabel: formData.get("categoryLabel") || undefined,
+    amount: formData.get("amount"),
+    purchaseDate: formData.get("purchaseDate"),
+    usefulLifeMonths: usefulLifeRaw ? usefulLifeRaw : undefined,
+    note: formData.get("note") || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const data = parsed.data;
+
+  await prisma.capexItem.update({
+    where: { id: capexId },
+    data: {
+      name: data.name,
+      categoryLabel: data.categoryLabel || null,
+      amount: data.amount,
+      purchaseDate: new Date(data.purchaseDate),
+      usefulLifeMonths: data.usefulLifeMonths ?? null,
+      note: data.note || null,
+    },
+  });
+
+  revalidatePath("/finance/capex");
+  revalidatePath("/dashboard");
+}

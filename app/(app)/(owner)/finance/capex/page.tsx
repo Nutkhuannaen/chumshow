@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { CapexForm } from "./CapexForm";
 
@@ -37,6 +38,7 @@ export default async function CapexPage() {
                   <th className="px-4 py-2 font-medium">วันที่ซื้อ</th>
                   <th className="px-4 py-2 font-medium text-right">จำนวนเงิน</th>
                   <th className="px-4 py-2 font-medium text-right">ค่าเสื่อม/เดือน</th>
+                  <th className="px-4 py-2"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -52,6 +54,11 @@ export default async function CapexPage() {
                       {item.usefulLifeMonths
                         ? `฿${(item.amount.toNumber() / item.usefulLifeMonths).toFixed(2)}`
                         : "ยังไม่ได้ระบุอายุการใช้งาน"}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <Link href={`/finance/capex/${item.id}/edit`} className="text-xs text-stone-500 hover:underline">
+                        แก้ไข
+                      </Link>
                     </td>
                   </tr>
                 ))}

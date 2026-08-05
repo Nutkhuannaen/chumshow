@@ -14,7 +14,10 @@ export function getOpenShift() {
  * expectedCash = openingCash + cash sales − cash expenses − cash owner draws (all scoped to this shift).
  * PromptPay sales never touch the till, so they're excluded entirely.
  */
-export async function computeExpectedCash(shiftId: string, openingCash: Prisma.Decimal) {
+export async function computeExpectedCash(
+  shiftId: string,
+  openingCash: string | number | Prisma.Decimal,
+) {
   const [salesAgg, expensesAgg, drawsAgg] = await Promise.all([
     prisma.sale.aggregate({
       where: { shiftId, paymentMethod: "CASH", status: "COMPLETED" },
@@ -34,5 +37,5 @@ export async function computeExpectedCash(shiftId: string, openingCash: Prisma.D
   const cashExpenses = expensesAgg._sum.amount ?? new Decimal(0);
   const cashDraws = drawsAgg._sum.amount ?? new Decimal(0);
 
-  return openingCash.add(cashSales).sub(cashExpenses).sub(cashDraws);
+  return new Decimal(openingCash).add(cashSales).sub(cashExpenses).sub(cashDraws);
 }
