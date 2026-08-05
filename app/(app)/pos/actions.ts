@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/app/generated/prisma/client";
 import { issueStock, InsufficientStockError } from "@/lib/costing";
+import { getOpenShift } from "@/lib/shift";
 import { auth } from "@/auth";
 
 export type ActionState = { error?: string } | undefined;
@@ -27,6 +28,9 @@ async function nextSaleNumber(tx: Prisma.TransactionClient) {
 export async function checkout(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await auth();
   if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+
+  const shift = await getOpenShift();
+  if (!shift) return { error: "กรุณาเปิดกะก่อนเริ่มขายสินค้า" };
 
   const productIds = formData.getAll("productId");
   const quantities = formData.getAll("quantity");
@@ -71,6 +75,7 @@ export async function checkout(_prev: ActionState, formData: FormData): Promise<
         data: {
           saleNumber,
           cashierId: session.user.id,
+          shiftId: shift.id,
           paymentMethod: "CASH",
           status: "COMPLETED",
           subtotal: 0,

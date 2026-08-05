@@ -1,7 +1,25 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getOpenShift } from "@/lib/shift";
 import { POSTerminal } from "./POSTerminal";
 
 export default async function PosPage() {
+  const shift = await getOpenShift();
+
+  if (!shift) {
+    return (
+      <div className="mx-auto max-w-sm rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
+        <p className="mb-4 text-sm text-stone-600">ต้องเปิดกะก่อนถึงจะเริ่มขายสินค้าได้</p>
+        <Link
+          href="/shift"
+          className="inline-block rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white"
+        >
+          ไปเปิดกะ
+        </Link>
+      </div>
+    );
+  }
+
   const products = await prisma.product.findMany({
     where: { isActive: true },
     orderBy: { name: "asc" },
