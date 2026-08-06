@@ -55,6 +55,20 @@ export async function createExpense(_prev: ActionState, formData: FormData): Pro
   revalidatePath("/finance/expenses");
 }
 
+export async function deleteExpense(
+  expenseId: string,
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+
+  await prisma.expense.delete({ where: { id: expenseId } });
+
+  revalidatePath("/finance/expenses");
+  revalidatePath("/dashboard");
+}
+
 export async function updateExpense(
   expenseId: string,
   _prev: ActionState,

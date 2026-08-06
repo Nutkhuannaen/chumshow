@@ -41,6 +41,20 @@ export async function createOwnerDraw(_prev: ActionState, formData: FormData): P
   revalidatePath("/finance/owner-draws");
 }
 
+export async function deleteOwnerDraw(
+  drawId: string,
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+
+  await prisma.ownerDraw.delete({ where: { id: drawId } });
+
+  revalidatePath("/finance/owner-draws");
+  revalidatePath("/dashboard");
+}
+
 export async function updateOwnerDraw(
   drawId: string,
   _prev: ActionState,

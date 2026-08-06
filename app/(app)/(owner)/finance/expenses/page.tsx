@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { DeleteButton } from "@/app/(app)/DeleteButton";
 import { ExpenseForm, CategoryQuickAdd } from "./ExpenseForm";
+import { deleteExpense } from "./actions";
 
 export default async function ExpensesPage() {
   const [categories, expenses] = await Promise.all([
@@ -63,9 +65,12 @@ export default async function ExpensesPage() {
                     </td>
                     <td className="px-4 py-2 text-right text-stone-800">฿{e.amount.toFixed(2)}</td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/finance/expenses/${e.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
-                        แก้ไข
-                      </Link>
+                      <div className="flex items-center justify-end gap-3">
+                        <Link href={`/finance/expenses/${e.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
+                          แก้ไข
+                        </Link>
+                        <DeleteButton action={deleteExpense.bind(null, e.id)} />
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -48,6 +48,20 @@ export async function createCapexItem(_prev: ActionState, formData: FormData): P
   revalidatePath("/dashboard");
 }
 
+export async function deleteCapexItem(
+  capexId: string,
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+
+  await prisma.capexItem.delete({ where: { id: capexId } });
+
+  revalidatePath("/finance/capex");
+  revalidatePath("/dashboard");
+}
+
 export async function updateCapexItem(
   capexId: string,
   _prev: ActionState,

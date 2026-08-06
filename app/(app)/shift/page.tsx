@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getOpenShift, computeExpectedCash } from "@/lib/shift";
+import { DeleteButton } from "@/app/(app)/DeleteButton";
 import { OpenShiftForm } from "./OpenShiftForm";
+import { deleteShift } from "./actions";
 
 export default async function ShiftPage() {
   const shift = await getOpenShift();
@@ -45,6 +47,7 @@ export default async function ShiftPage() {
             <Link href="/shift/edit" className="text-xs text-stone-400 hover:underline">
               แก้ไข
             </Link>
+            <DeleteButton action={deleteShift.bind(null, shift.id)} />
           </span>
         </div>
         <div className="flex justify-between border-t border-stone-200 pt-3 font-semibold">

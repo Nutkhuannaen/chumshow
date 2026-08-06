@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { DeleteButton } from "@/app/(app)/DeleteButton";
 import { OwnerDrawForm } from "./OwnerDrawForm";
+import { deleteOwnerDraw } from "./actions";
 
 export default async function OwnerDrawsPage() {
   const draws = await prisma.ownerDraw.findMany({
@@ -49,9 +51,12 @@ export default async function OwnerDrawsPage() {
                     <td className="px-4 py-2 text-stone-500">{d.reason ?? "—"}</td>
                     <td className="px-4 py-2 text-right text-stone-800">฿{d.amount.toFixed(2)}</td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/finance/owner-draws/${d.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
-                        แก้ไข
-                      </Link>
+                      <div className="flex items-center justify-end gap-3">
+                        <Link href={`/finance/owner-draws/${d.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
+                          แก้ไข
+                        </Link>
+                        <DeleteButton action={deleteOwnerDraw.bind(null, d.id)} />
+                      </div>
                     </td>
                   </tr>
                 ))

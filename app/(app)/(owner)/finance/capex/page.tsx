@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { DeleteButton } from "@/app/(app)/DeleteButton";
 import { CapexForm } from "./CapexForm";
+import { deleteCapexItem } from "./actions";
 
 export default async function CapexPage() {
   const items = await prisma.capexItem.findMany({ orderBy: { purchaseDate: "desc" } });
@@ -56,9 +58,12 @@ export default async function CapexPage() {
                         : "ยังไม่ได้ระบุอายุการใช้งาน"}
                     </td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/finance/capex/${item.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
-                        แก้ไข
-                      </Link>
+                      <div className="flex items-center justify-end gap-3">
+                        <Link href={`/finance/capex/${item.id}/edit`} prefetch={false} className="text-xs text-stone-500 hover:underline">
+                          แก้ไข
+                        </Link>
+                        <DeleteButton action={deleteCapexItem.bind(null, item.id)} />
+                      </div>
                     </td>
                   </tr>
                 ))}

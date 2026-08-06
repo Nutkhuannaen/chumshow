@@ -58,6 +58,20 @@ export async function closeShift(_prev: ActionState, formData: FormData): Promis
   redirect("/shift/history");
 }
 
+export async function deleteShift(
+  shiftId: string,
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+
+  await prisma.cashShift.delete({ where: { id: shiftId } });
+
+  revalidatePath("/shift");
+  revalidatePath("/shift/history");
+}
+
 export async function updateOpenShift(
   shiftId: string,
   _prev: ActionState,
