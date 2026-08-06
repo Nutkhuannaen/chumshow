@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import type { ActionState } from "./actions";
+import { BarcodeScannerButton } from "@/app/(app)/BarcodeScannerButton";
 
 type Category = { id: string; name: string };
 
@@ -28,6 +29,7 @@ export function ProductForm({
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, undefined);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -52,11 +54,19 @@ export function ProductForm({
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700">บาร์โค้ด (ไม่บังคับ)</label>
-          <input
-            name="barcode"
-            defaultValue={initialValues?.barcode ?? ""}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
-          />
+          <div className="flex gap-2">
+            <input
+              ref={barcodeInputRef}
+              name="barcode"
+              defaultValue={initialValues?.barcode ?? ""}
+              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+            />
+            <BarcodeScannerButton
+              onScan={(code) => {
+                if (barcodeInputRef.current) barcodeInputRef.current.value = code;
+              }}
+            />
+          </div>
         </div>
       </div>
 

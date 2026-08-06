@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 
@@ -11,6 +11,13 @@ const notoSansThai = Noto_Sans_Thai({
 export const metadata: Metadata = {
   title: "ChumShow — POS ร้านโชห่วย",
   description: "ระบบขายหน้าร้าน สต็อก และกำไร-ขาดทุน สำหรับร้านโชห่วยไทย",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

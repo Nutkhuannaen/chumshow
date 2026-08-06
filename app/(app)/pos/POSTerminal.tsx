@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { checkout, checkoutPromptPay, type ActionState } from "./actions";
-import { BarcodeScannerButton } from "./BarcodeScannerButton";
+import { BarcodeScannerButton } from "@/app/(app)/BarcodeScannerButton";
 
 type Product = {
   id: string;
