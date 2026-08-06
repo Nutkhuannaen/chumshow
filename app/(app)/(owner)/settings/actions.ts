@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { SHOP_CACHE_TAG } from "@/lib/shop";
 
 export type ActionState = { error?: string; success?: boolean } | undefined;
 
@@ -42,6 +43,7 @@ export async function updateShopSettings(_prev: ActionState, formData: FormData)
     await prisma.shop.create({ data: payload });
   }
 
+  revalidateTag(SHOP_CACHE_TAG, "max");
   revalidatePath("/settings");
   revalidatePath("/", "layout");
   return { success: true };

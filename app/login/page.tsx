@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import { getShop } from "@/lib/shop";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage() {
   const [shop, staff] = await Promise.all([
-    prisma.shop.findFirst(),
+    getShop(),
     prisma.user.findMany({
       where: { role: "STAFF", isActive: true },
       select: { username: true, name: true },

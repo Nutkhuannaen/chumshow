@@ -1,11 +1,10 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getShop } from "@/lib/shop";
 import { NavLinks } from "./NavLinks";
 import { logout } from "./actions";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  const shop = await prisma.shop.findFirst();
+  const [session, shop] = await Promise.all([auth(), getShop()]);
 
   return (
     <div className="flex min-h-screen flex-col">
