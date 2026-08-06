@@ -16,7 +16,15 @@ export default async function SalesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-stone-900">ประวัติการขาย</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold text-stone-900">ประวัติการขาย</h1>
+        <a
+          href="/api/export/sales"
+          className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+        >
+          ส่งออก CSV
+        </a>
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
         <table className="w-full min-w-[600px] text-sm">

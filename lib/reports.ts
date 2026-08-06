@@ -1,20 +1,44 @@
 import { prisma } from "./prisma";
 
-export type Period = "day" | "week" | "month";
+export type Period = "day" | "week" | "month" | "3months" | "6months" | "year" | "custom";
 
-export function getPeriodRange(period: Period, now = new Date()) {
+export function getPeriodRange(period: Period, now = new Date(), customStart?: Date, customEnd?: Date) {
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const end = new Date(startOfToday);
   end.setDate(end.getDate() + 1);
 
+  if (period === "custom" && customStart && customEnd) {
+    const start = new Date(customStart.getFullYear(), customStart.getMonth(), customStart.getDate());
+    const customEndExclusive = new Date(customEnd.getFullYear(), customEnd.getMonth(), customEnd.getDate());
+    customEndExclusive.setDate(customEndExclusive.getDate() + 1);
+    return { start, end: customEndExclusive };
+  }
+
   let start: Date;
-  if (period === "day") {
-    start = startOfToday;
-  } else if (period === "week") {
-    start = new Date(startOfToday);
-    start.setDate(start.getDate() - 6);
-  } else {
-    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  switch (period) {
+    case "week":
+      start = new Date(startOfToday);
+      start.setDate(start.getDate() - 6);
+      break;
+    case "month":
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case "3months":
+      start = new Date(startOfToday);
+      start.setMonth(start.getMonth() - 3);
+      break;
+    case "6months":
+      start = new Date(startOfToday);
+      start.setMonth(start.getMonth() - 6);
+      break;
+    case "year":
+      start = new Date(startOfToday);
+      start.setFullYear(start.getFullYear() - 1);
+      break;
+    case "day":
+    case "custom":
+    default:
+      start = startOfToday;
   }
 
   return { start, end };

@@ -1,9 +1,12 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import { SHOP_CACHE_TAG } from "@/lib/shop";
+import { RESET_CONFIRM_PHRASE } from "./constants";
 
 export type ActionState = { error?: string; success?: boolean } | undefined;
 
@@ -47,4 +50,34 @@ export async function updateShopSettings(_prev: ActionState, formData: FormData)
   revalidatePath("/settings");
   revalidatePath("/", "layout");
   return { success: true };
+}
+
+export async function resetShopData(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user) return { error: "กรุณาเข้าสู่ระบบใหม่" };
+  if (session.user.role !== "OWNER") return { error: "เฉพาะเจ้าของร้านเท่านั้นที่ทำรายการนี้ได้" };
+
+  if (formData.get("confirmText") !== RESET_CONFIRM_PHRASE) {
+    return { error: `กรุณาพิมพ์ "${RESET_CONFIRM_PHRASE}" ให้ตรงเพื่อยืนยัน` };
+  }
+
+  // Order matters: delete children before the parents/rows they reference.
+  // Sale/StockIn/StockAdjustment cascade-delete their line items automatically,
+  // so Product can only be removed once those three (plus StockMovement) are gone.
+  await prisma.$transaction([
+    prisma.sale.deleteMany(),
+    prisma.stockIn.deleteMany(),
+    prisma.stockAdjustment.deleteMany(),
+    prisma.stockMovement.deleteMany(),
+    prisma.expense.deleteMany(),
+    prisma.ownerDraw.deleteMany(),
+    prisma.capexItem.deleteMany(),
+    prisma.cashShift.deleteMany(),
+    prisma.product.deleteMany(),
+    prisma.category.deleteMany(),
+    prisma.expenseCategory.deleteMany(),
+  ]);
+
+  revalidatePath("/", "layout");
+  redirect("/settings?reset=1");
 }
